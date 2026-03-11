@@ -93,3 +93,7 @@ jobs:
           files: |
             ./windows/FileCopyMoveDelete.exe
             ./linux/FileCopyMoveDelete
+
+            git add .
+git commit -m "Initial commit"
+git push origin main
