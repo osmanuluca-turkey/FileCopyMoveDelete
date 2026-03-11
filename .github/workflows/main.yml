@@ -1,19 +1,15 @@
 name: Build EXE
 
-# ── Ne zaman çalışsın ──
 on:
   push:
     branches: [ main ]
     tags:
-      - 'v*'            # v1.0, v0.006 gibi tag push edilince
+      - 'v*'
   pull_request:
     branches: [ main ]
-  workflow_dispatch:      # Manuel tetikleme butonu
+  workflow_dispatch:
 
 jobs:
-  # ═══════════════════════════════════════
-  #  WINDOWS EXE
-  # ═══════════════════════════════════════
   build-windows:
     runs-on: windows-latest
     
@@ -26,12 +22,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 📦 Bağımlılıkları yükle
+      # ── requirements.txt OLMADAN direkt yükleme ──
+      - name: 📦 PyInstaller yükle
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pyinstaller
 
-      - name: 🔨 EXE oluştur (Windows)
+      - name: 🔨 EXE oluştur
         run: |
           pyinstaller --noconfirm --onefile --windowed ^
             --name "FileCopyMoveDelete" ^
@@ -45,9 +42,6 @@ jobs:
           path: dist/FileCopyMoveDelete.exe
           retention-days: 90
 
-  # ═══════════════════════════════════════
-  #  LINUX BINARY (isteğe bağlı)
-  # ═══════════════════════════════════════
   build-linux:
     runs-on: ubuntu-latest
     
@@ -60,12 +54,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 📦 Bağımlılıkları yükle
+      - name: 📦 PyInstaller yükle
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pyinstaller
 
-      - name: 🔨 Binary oluştur (Linux)
+      - name: 🔨 Binary oluştur
         run: |
           pyinstaller --noconfirm --onefile --windowed \
             --name "FileCopyMoveDelete" \
@@ -79,9 +73,6 @@ jobs:
           path: dist/FileCopyMoveDelete
           retention-days: 90
 
-  # ═══════════════════════════════════════
-  #  TAG PUSH EDİLİNCE RELEASE OLUŞTUR
-  # ═══════════════════════════════════════
   release:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
@@ -110,17 +101,8 @@ jobs:
           body: |
             ## File Copy/Move/Delete ${{ github.ref_name }}
             
-            ### İndirme
             - **Windows:** `FileCopyMoveDelete.exe`
             - **Linux:** `FileCopyMoveDelete`
-            
-            ### Kullanım
-            1. EXE'yi indirin ve çalıştırın
-            2. Kaynak klasörü seçin
-            3. Hedef klasörü seçin  
-            4. Dosya listesini (.txt) seçin
-            5. İşlem seçin (Copy/Move/Delete)
-            6. ÇALIŞTIR'a basın
           draft: false
           prerelease: false
           files: |
