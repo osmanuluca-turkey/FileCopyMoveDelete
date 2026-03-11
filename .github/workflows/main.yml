@@ -1,1 +1,128 @@
+name: Build EXE
 
+# ── Ne zaman çalışsın ──
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'            # v1.0, v0.006 gibi tag push edilince
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:      # Manuel tetikleme butonu
+
+jobs:
+  # ═══════════════════════════════════════
+  #  WINDOWS EXE
+  # ═══════════════════════════════════════
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: 📥 Kodu indir
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Bağımlılıkları yükle
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔨 EXE oluştur (Windows)
+        run: |
+          pyinstaller --noconfirm --onefile --windowed ^
+            --name "FileCopyMoveDelete" ^
+            --clean ^
+            main.py
+
+      - name: 📤 EXE'yi artifact olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileCopyMoveDelete-Windows
+          path: dist/FileCopyMoveDelete.exe
+          retention-days: 90
+
+  # ═══════════════════════════════════════
+  #  LINUX BINARY (isteğe bağlı)
+  # ═══════════════════════════════════════
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Kodu indir
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Bağımlılıkları yükle
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔨 Binary oluştur (Linux)
+        run: |
+          pyinstaller --noconfirm --onefile --windowed \
+            --name "FileCopyMoveDelete" \
+            --clean \
+            main.py
+
+      - name: 📤 Binary'yi artifact olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileCopyMoveDelete-Linux
+          path: dist/FileCopyMoveDelete
+          retention-days: 90
+
+  # ═══════════════════════════════════════
+  #  TAG PUSH EDİLİNCE RELEASE OLUŞTUR
+  # ═══════════════════════════════════════
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 📥 Windows artifact indir
+        uses: actions/download-artifact@v4
+        with:
+          name: FileCopyMoveDelete-Windows
+          path: ./windows
+
+      - name: 📥 Linux artifact indir
+        uses: actions/download-artifact@v4
+        with:
+          name: FileCopyMoveDelete-Linux
+          path: ./linux
+
+      - name: 🏷️ GitHub Release oluştur
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Release ${{ github.ref_name }}"
+          body: |
+            ## File Copy/Move/Delete ${{ github.ref_name }}
+            
+            ### İndirme
+            - **Windows:** `FileCopyMoveDelete.exe`
+            - **Linux:** `FileCopyMoveDelete`
+            
+            ### Kullanım
+            1. EXE'yi indirin ve çalıştırın
+            2. Kaynak klasörü seçin
+            3. Hedef klasörü seçin  
+            4. Dosya listesini (.txt) seçin
+            5. İşlem seçin (Copy/Move/Delete)
+            6. ÇALIŞTIR'a basın
+          draft: false
+          prerelease: false
+          files: |
+            ./windows/FileCopyMoveDelete.exe
+            ./linux/FileCopyMoveDelete
