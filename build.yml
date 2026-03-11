@@ -45,39 +45,6 @@ jobs:
           path: dist/FileCopyMoveDelete.exe
           retention-days: 90
 
-  # ═══════════════════════════════════════
-  #  LINUX BINARY (isteğe bağlı)
-  # ═══════════════════════════════════════
-  build-linux:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: 📥 Kodu indir
-        uses: actions/checkout@v4
-
-      - name: 🐍 Python kur
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: 📦 Bağımlılıkları yükle
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: 🔨 Binary oluştur (Linux)
-        run: |
-          pyinstaller --noconfirm --onefile --windowed \
-            --name "FileCopyMoveDelete" \
-            --clean \
-            main.py
-
-      - name: 📤 Binary'yi artifact olarak yükle
-        uses: actions/upload-artifact@v4
-        with:
-          name: FileCopyMoveDelete-Linux
-          path: dist/FileCopyMoveDelete
-          retention-days: 90
 
   # ═══════════════════════════════════════
   #  TAG PUSH EDİLİNCE RELEASE OLUŞTUR
