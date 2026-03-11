@@ -22,18 +22,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      # ── requirements.txt OLMADAN direkt yükleme ──
       - name: 📦 PyInstaller yükle
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
+        run: pip install pyinstaller
 
       - name: 🔨 EXE oluştur
-        run: |
-          pyinstaller --noconfirm --onefile --windowed ^
-            --name "FileCopyMoveDelete" ^
-            --clean ^
-            main.py
+        shell: cmd
+        run: pyinstaller --noconfirm --onefile --windowed --name "FileCopyMoveDelete" --clean main.py
 
       - name: 📤 EXE'yi artifact olarak yükle
         uses: actions/upload-artifact@v4
@@ -42,39 +36,8 @@ jobs:
           path: dist/FileCopyMoveDelete.exe
           retention-days: 90
 
-  build-linux:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: 📥 Kodu indir
-        uses: actions/checkout@v4
-
-      - name: 🐍 Python kur
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: 📦 PyInstaller yükle
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-
-      - name: 🔨 Binary oluştur
-        run: |
-          pyinstaller --noconfirm --onefile --windowed \
-            --name "FileCopyMoveDelete" \
-            --clean \
-            main.py
-
-      - name: 📤 Binary'yi artifact olarak yükle
-        uses: actions/upload-artifact@v4
-        with:
-          name: FileCopyMoveDelete-Linux
-          path: dist/FileCopyMoveDelete
-          retention-days: 90
-
   release:
-    needs: [build-windows, build-linux]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     
@@ -88,23 +51,13 @@ jobs:
           name: FileCopyMoveDelete-Windows
           path: ./windows
 
-      - name: 📥 Linux artifact indir
-        uses: actions/download-artifact@v4
-        with:
-          name: FileCopyMoveDelete-Linux
-          path: ./linux
-
       - name: 🏷️ GitHub Release oluştur
         uses: softprops/action-gh-release@v2
         with:
           name: "Release ${{ github.ref_name }}"
           body: |
             ## File Copy/Move/Delete ${{ github.ref_name }}
-            
-            - **Windows:** `FileCopyMoveDelete.exe`
-            - **Linux:** `FileCopyMoveDelete`
+            - **Windows:** `FileCopyMoveDelete.exe` indirip çalıştırın
           draft: false
           prerelease: false
-          files: |
-            ./windows/FileCopyMoveDelete.exe
-            ./linux/FileCopyMoveDelete
+          files: ./windows/FileCopyMoveDelete.exe
